@@ -338,24 +338,28 @@ $carti_imprumutate = $pdo->query("SELECT COUNT(*) FROM imprumuturi WHERE status 
             border: 1px solid #f5c6cb;
         }
 
-        .nav-links {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
+.nav-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+    /* ← Se ajustează automat: desktop = 4 pe linie, mobile = 2 pe linie */
+    gap: 15px;
+    margin-top: 20px;
+}
 
-        .nav-links a {
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
+.nav-links a {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s;
+    text-align: center;
+}
 
-        .nav-links a:hover {
-            background: #764ba2;
-        }
+.nav-links a:hover {
+    background: #764ba2;
+}
+
     </style>
 </head>
 <body>
@@ -379,12 +383,17 @@ $carti_imprumutate = $pdo->query("SELECT COUNT(*) FROM imprumuturi WHERE status 
                 </a>
             </div>
 
-		<div class="nav-links">
-			<a href="rapoarte.php">📊 Rapoarte</a>
-			<a href="raport_prezenta.php">📈 Prezență cititori</a>  <!-- NOU -->
-			<a href="adauga_carte.php">➕ Adaugă carte</a>
-			<a href="adauga_cititor.php">👤 Adaugă cititor</a>
-		</div>
+<div class="nav-links">
+    <a href="rapoarte.php">📊 Rapoarte</a>
+    <a href="scanare_rapida.php">🔍 Scanare Rapidă</a>
+    <a href="imprumuturi.php">📋 Listă Împrumuturi</a>
+    <a href="raport_prezenta.php">📈 Raport Prezență</a>
+    <a href="status_vizari.php">✅ Status Vizări</a> <!-- ← NOU -->
+    <a href="lista_nevizati.php">⚠️ Doar Nevizați</a>
+    <a href="adauga_carte.php">➕ Adaugă carte</a>
+    <a href="adauga_cititor.php">👤 Adaugă cititor</a>
+</div>
+
         </div>
 
         <?php if (isset($mesaj)): ?>

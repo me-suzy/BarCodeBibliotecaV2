@@ -2,27 +2,85 @@
 // adauga_carte.php - Adaugă cărți noi în sistem
 require_once 'config.php';
 
+// Pre-completare cod dacă vine din scanare
+$cod_prestabilit = isset($_GET['cod']) ? strtoupper(trim($_GET['cod'])) : '';
+
+// Variabile pentru păstrarea datelor la eroare
+$form_data = [
+    'cod_bare' => $cod_prestabilit,
+    'titlu' => '',
+    'autor' => '',
+    'isbn' => '',
+    'cota' => '',
+    'raft' => '',
+    'nivel' => '',
+    'pozitie' => '',
+    'sectiune' => '',
+    'observatii_locatie' => ''
+];
+
+$mesaj = '';
+$tip_mesaj = '';
+$cod_duplicat = false; // Flag pentru evidențiere câmp
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $cod_bare = trim($_POST['cod_bare']);
-    $titlu = trim($_POST['titlu']);
-    $autor = trim($_POST['autor']);
-    $isbn = trim($_POST['isbn']);
-    $cota = trim($_POST['cota']);
-    $raft = trim($_POST['raft']);
-    $nivel = trim($_POST['nivel']);
-    $pozitie = trim($_POST['pozitie']);
-    $sectiune = trim($_POST['sectiune']);
-    $observatii_locatie = trim($_POST['observatii_locatie']);
+    // Salvează toate datele din formular
+    $form_data = [
+        'cod_bare' => strtoupper(trim($_POST['cod_bare'])),
+        'titlu' => trim($_POST['titlu']),
+        'autor' => trim($_POST['autor']),
+        'isbn' => trim($_POST['isbn']),
+        'cota' => trim($_POST['cota']),
+        'raft' => trim($_POST['raft']),
+        'nivel' => trim($_POST['nivel']),
+        'pozitie' => trim($_POST['pozitie']),
+        'sectiune' => trim($_POST['sectiune']),
+        'observatii_locatie' => trim($_POST['observatii_locatie'])
+    ];
 
     try {
         $stmt = $pdo->prepare("INSERT INTO carti (cod_bare, titlu, autor, isbn, cota, raft, nivel, pozitie, sectiune, observatii_locatie) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$cod_bare, $titlu, $autor, $isbn, $cota, $raft, $nivel, $pozitie, $sectiune, $observatii_locatie]);
+        $stmt->execute([
+            $form_data['cod_bare'],
+            $form_data['titlu'],
+            $form_data['autor'],
+            $form_data['isbn'],
+            $form_data['cota'],
+            $form_data['raft'],
+            $form_data['nivel'],
+            $form_data['pozitie'],
+            $form_data['sectiune'],
+            $form_data['observatii_locatie']
+        ]);
 
-        $mesaj = "✅ Cartea a fost adăugată cu succes!";
+        $mesaj = "✅ Cartea <strong>{$form_data['titlu']}</strong> a fost adăugată cu succes!";
         $tip_mesaj = "success";
+        
+        // Resetează formularul DOAR la succes
+        $form_data = [
+            'cod_bare' => '',
+            'titlu' => '',
+            'autor' => '',
+            'isbn' => '',
+            'cota' => '',
+            'raft' => '',
+            'nivel' => '',
+            'pozitie' => '',
+            'sectiune' => '',
+            'observatii_locatie' => ''
+        ];
+        
     } catch (PDOException $e) {
-        $mesaj = "❌ Eroare: " . $e->getMessage();
-        $tip_mesaj = "danger";
+        // Verifică dacă e eroare de cod duplicat
+        if ($e->getCode() == 23000 && strpos($e->getMessage(), 'Duplicate entry') !== false) {
+            $mesaj = "❌ Codul de bare <strong>{$form_data['cod_bare']}</strong> există deja în baza de date!";
+            $tip_mesaj = "danger";
+            $cod_duplicat = true; // Activează evidențierea
+        } else {
+            $mesaj = "❌ Eroare la salvare: " . $e->getMessage();
+            $tip_mesaj = "danger";
+        }
+        // DATELE RĂMÂN PĂSTRATE în $form_data
     }
 }
 ?>
@@ -197,6 +255,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-top: 10px;
             font-family: monospace;
         }
+
+        .error-field {
+            border-color: #dc3545 !important;
+            background: #f8d7da !important;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .success-indicator {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .check-link {
+            text-align: center;
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .check-link a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .check-link a:hover {
+            text-decoration: underline;
+        }
+		
+.btn-aleph {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-aleph:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+}
+
+.btn-aleph:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.aleph-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #17a2b8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.field-autocomplete {
+    border-color: #28a745 !important;
+    background: #d4edda !important;
+}
+
+
     </style>
 </head>
 <body>
@@ -216,6 +358,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="alert alert-<?php echo $tip_mesaj; ?>">
                 <?php echo $mesaj; ?>
             </div>
+            
+            <?php if ($cod_duplicat): ?>
+                <div class="check-link">
+                    <a href="carti.php" target="_blank">🔍 Vezi lista completă de cărți pentru a verifica codurile existente</a>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <form method="POST" id="carteForm">
@@ -223,76 +371,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Informații de bază -->
                 <div class="form-group">
                     <label>Cod de bare <span class="required">*</span></label>
-                    <input type="text" name="cod_bare" placeholder="BOOK001" required>
+                    <input type="text" 
+                           name="cod_bare" 
+                           placeholder="BOOK003" 
+                           value="<?php echo htmlspecialchars($form_data['cod_bare']); ?>"
+                           required
+                           class="<?php echo $cod_duplicat ? 'error-field' : ''; ?>"
+                           <?php echo (!empty($cod_prestabilit) && !$cod_duplicat) ? 'readonly style="background:#e9ecef;"' : ''; ?>>
+                    
+                    <?php if (!empty($cod_prestabilit) && !$cod_duplicat): ?>
+                        <small class="success-indicator">
+                            ✅ Cod scanat: <?php echo htmlspecialchars($cod_prestabilit); ?>
+                        </small>
+                    <?php endif; ?>
+                    
+                    <?php if ($cod_duplicat): ?>
+                        <small class="error-message">
+                            ⚠️ Acest cod există deja! Verifică lista de cărți sau folosește alt cod.
+                        </small>
+                    <?php endif; ?>
                 </div>
 
                 <div class="form-group">
                     <label>Titlu <span class="required">*</span></label>
-                    <input type="text" name="titlu" placeholder="Enigma Otiliei" required>
+                    <input type="text" 
+                           name="titlu" 
+                           placeholder="Enigma Otiliei" 
+                           value="<?php echo htmlspecialchars($form_data['titlu']); ?>"
+                           required>
                 </div>
 
                 <div class="form-group">
-                    <label></label>
-					<label>Autor <span class="required">*</span></label>
-                    <input type="text" name="autor" placeholder="George Călinescu" required>
+                    <label>Autor <span class="required">*</span></label>
+                    <input type="text" 
+                           name="autor" 
+                           placeholder="George Călinescu" 
+                           value="<?php echo htmlspecialchars($form_data['autor']); ?>"
+                           required>
                 </div>
 
                 <div class="form-group">
                     <label>ISBN</label>
-                    <input type="text" name="isbn" placeholder="9789734640560">
+                    <input type="text" 
+                           name="isbn" 
+                           placeholder="9789734640560"
+                           value="<?php echo htmlspecialchars($form_data['isbn']); ?>">
                 </div>
 
-                <!-- Sistem de localizare -->
+<!-- Sistem de localizare -->
+<div class="form-group">
+    <label>Cotă bibliotecară <span style="color: #17a2b8;">🔍</span></label>
+    <div style="display: flex; gap: 10px;">
+        <input type="text" 
+               name="cota" 
+               id="inputCota"
+               placeholder="IV-4659"
+               value="<?php echo htmlspecialchars($form_data['cota']); ?>"
+               style="flex: 1;">
+        <button type="button" 
+                id="btnCautaAleph" 
+                class="btn-aleph"
+                style="width: auto; padding: 12px 20px; margin-top: 0;">
+            🔍 Caută în Aleph
+        </button>
+    </div>
+    <small id="alephStatus" style="display: none; color: #666; margin-top: 5px;"></small>
+</div>
+
                 <div class="form-group">
-                    <label>Cota bibliotecară</label>
-                    <input type="text" name="cota" placeholder="821.135.1 CAL e">
+                    <label>Raft</label> 
+                    <select name="raft">
+                        <option value="">Alege raft</option>
+                        <?php for($i = 'A'; $i <= 'Z'; $i++): ?>
+                            <option value="<?php echo $i; ?>" <?php echo $form_data['raft'] === $i ? 'selected' : ''; ?>>
+                                <?php echo $i; ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
                 </div>
 
-<div class="form-group">
-    <label>Raft</label> 
-    <select name="raft">
-        <option value="">Alege raft</option>
-        <?php for($i = 'A'; $i <= 'Z'; $i++): ?>
-            <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
-        <?php endfor; ?>
-    </select>
-</div>
+                <div class="form-group">
+                    <label>Nivel</label>
+                    <select name="nivel">
+                        <option value="">Alege nivel</option> 
+                        <?php for($i = 1; $i <= 10; $i++): ?>
+                            <option value="<?php echo $i; ?>" <?php echo $form_data['nivel'] == $i ? 'selected' : ''; ?>>
+                                <?php echo $i; ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
 
-<div class="form-group">
-    <label>Nivel</label>
-    <select name="nivel">
-        <option value="">Alege nivel</option> 
-        <?php for($i = 1; $i <= 10; $i++): ?>
-            <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
-        <?php endfor; ?>
-    </select>
-</div>
-
-<div class="form-group">
-    <label>Poziție</label>
-    <input type="text" name="pozitie" placeholder="01" maxlength="2">
-</div>
+                <div class="form-group">
+                    <label>Poziție</label>
+                    <input type="text" 
+                           name="pozitie" 
+                           placeholder="01" 
+                           maxlength="2"
+                           value="<?php echo htmlspecialchars($form_data['pozitie']); ?>">
+                </div>
 
                 <div class="form-group">
                     <label>Secțiune</label>
                     <select name="sectiune">
                         <option value="">Alege secțiune</option>
-                        <option value="Literatură română">Literatură română</option>
-                        <option value="Literatură universală">Literatură universală</option>
-                        <option value="Știință">Știință</option>
-                        <option value="Istorie">Istorie</option>
-                        <option value="Filosofie">Filosofie</option>
-                        <option value="Arte">Arte</option>
-                        <option value="Drept">Drept</option>
-                        <option value="Medicină">Medicină</option>
-                        <option value="Tehnică">Tehnică</option>
-                        <option value="Alte">Alte</option>
+                        <option value="Literatură română" <?php echo $form_data['sectiune'] === 'Literatură română' ? 'selected' : ''; ?>>Literatură română</option>
+                        <option value="Literatură universală" <?php echo $form_data['sectiune'] === 'Literatură universală' ? 'selected' : ''; ?>>Literatură universală</option>
+                        <option value="Știință" <?php echo $form_data['sectiune'] === 'Știință' ? 'selected' : ''; ?>>Știință</option>
+                        <option value="Istorie" <?php echo $form_data['sectiune'] === 'Istorie' ? 'selected' : ''; ?>>Istorie</option>
+                        <option value="Filosofie" <?php echo $form_data['sectiune'] === 'Filosofie' ? 'selected' : ''; ?>>Filosofie</option>
+                        <option value="Arte" <?php echo $form_data['sectiune'] === 'Arte' ? 'selected' : ''; ?>>Arte</option>
+                        <option value="Drept" <?php echo $form_data['sectiune'] === 'Drept' ? 'selected' : ''; ?>>Drept</option>
+                        <option value="Medicină" <?php echo $form_data['sectiune'] === 'Medicină' ? 'selected' : ''; ?>>Medicină</option>
+                        <option value="Tehnică" <?php echo $form_data['sectiune'] === 'Tehnică' ? 'selected' : ''; ?>>Tehnică</option>
+                        <option value="Alte" <?php echo $form_data['sectiune'] === 'Alte' ? 'selected' : ''; ?>>Alte</option>
                     </select>
                 </div>
 
                 <div class="form-group-full">
                     <label>Observații locație</label>
-                    <textarea name="observatii_locatie" placeholder="Ex: Carte rară, păstrați cu grijă sau Indicatoare suplimentare pentru localizare"></textarea>
+                    <textarea name="observatii_locatie" 
+                              placeholder="Ex: Carte rară, păstrați cu grijă sau Indicatoare suplimentare pentru localizare"><?php echo htmlspecialchars($form_data['observatii_locatie']); ?></textarea>
                 </div>
             </div>
 
@@ -302,8 +501,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="index.php" class="home-link">🏠 Acasă</a>
         <a href="index.php" class="back-link">← Înapoi la scanare</a>
     </div>
+	
+
+
 
     <script>
+	
+// === INTEGRARE ALEPH ===
+document.getElementById('btnCautaAleph').addEventListener('click', function() {
+    const cota = document.getElementById('inputCota').value.trim();
+    
+    if (!cota) {
+        alert('⚠️ Introduceți mai întâi cota bibliotecară!');
+        document.getElementById('inputCota').focus();
+        return;
+    }
+    
+    cautaInAleph(cota);
+});
+
+// Enter pe câmpul cotă = căutare automată
+document.getElementById('inputCota').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('btnCautaAleph').click();
+    }
+});
+
+function cautaInAleph(cota) {
+    const btn = document.getElementById('btnCautaAleph');
+    const status = document.getElementById('alephStatus');
+    
+    // Dezactivează buton și afișează loading
+    btn.disabled = true;
+    btn.innerHTML = '<span class="aleph-loading"></span> Caută...';
+    status.style.display = 'block';
+    status.style.color = '#17a2b8';
+    status.textContent = '🔍 Interogare Aleph...';
+    
+    // AJAX request către API
+    fetch(`aleph_api.php?cota=${encodeURIComponent(cota)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // SUCCES - Completează formularul
+                status.style.color = '#28a745';
+                status.textContent = '✅ Date preluate din Aleph!';
+                
+                // Completează câmpurile
+                if (data.data.titlu) {
+                    document.querySelector('input[name="titlu"]').value = data.data.titlu;
+                    document.querySelector('input[name="titlu"]').classList.add('field-autocomplete');
+                }
+                
+                if (data.data.autor) {
+                    document.querySelector('input[name="autor"]').value = data.data.autor;
+                    document.querySelector('input[name="autor"]').classList.add('field-autocomplete');
+                }
+                
+                if (data.data.isbn) {
+                    document.querySelector('input[name="isbn"]').value = data.data.isbn;
+                    document.querySelector('input[name="isbn"]').classList.add('field-autocomplete');
+                }
+                
+                if (data.data.sectiune) {
+                    const selectSectiune = document.querySelector('select[name="sectiune"]');
+                    selectSectiune.value = data.data.sectiune;
+                    selectSectiune.classList.add('field-autocomplete');
+                }
+                
+                // Focus pe câmpul următor (Raft)
+                setTimeout(() => {
+                    document.querySelector('select[name="raft"]').focus();
+                }, 500);
+                
+            } else {
+                // EROARE
+                status.style.color = '#dc3545';
+                status.textContent = '❌ ' + data.mesaj;
+            }
+        })
+        .catch(error => {
+            status.style.color = '#dc3545';
+            status.textContent = '❌ Eroare conexiune: ' + error.message;
+        })
+        .finally(() => {
+            // Reactivează buton
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Caută în Aleph';
+        });
+}
+
+// Curăță highlight-ul când utilizatorul modifică manual
+['titlu', 'autor', 'isbn'].forEach(field => {
+    document.querySelector(`input[name="${field}"]`).addEventListener('input', function() {
+        this.classList.remove('field-autocomplete');
+    });
+});
+
+document.querySelector('select[name="sectiune"]').addEventListener('change', function() {
+    this.classList.remove('field-autocomplete');
+});
+	
         // Actualizare previzualizare locație în timp real
         function updateLocationPreview() {
             const raft = document.querySelector('select[name="raft"]').value;
@@ -317,7 +616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     const container = document.querySelector('.form-group-full');
                     preview = document.createElement('div');
                     preview.className = 'location-preview';
-                    container.appendChild(preview);
+                    container.insertBefore(preview, container.firstChild);
                 }
                 preview.textContent = `📍 Locație: ${locatie}`;
             }
@@ -328,15 +627,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.querySelector('select[name="nivel"]').addEventListener('change', updateLocationPreview);
         document.querySelector('input[name="pozitie"]').addEventListener('input', updateLocationPreview);
 
-        // Resetare formular după succes
-        <?php if (isset($mesaj) && $tip_mesaj === 'success'): ?>
-            setTimeout(() => {
-                document.getElementById('carteForm').reset();
-                // Șterge previzualizarea locației
-                const preview = document.querySelector('.location-preview');
-                if (preview) preview.remove();
-            }, 2000);
-        <?php endif; ?>
+        // Actualizare la încărcare dacă sunt valori
+        window.addEventListener('load', updateLocationPreview);
     </script>
 </body>
 </html>

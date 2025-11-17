@@ -91,17 +91,6 @@ $statistici = [
             align-items: center;
         }
 
-        .header {
-            background: white;
-            border-radius: 15px;
-            padding: 20px 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
         .header h1 {
             color: #667eea;
             font-size: 2em;
@@ -136,6 +125,108 @@ $statistici = [
 
         .back-btn:hover {
             background: #764ba2;
+        }
+
+        /* SECȚIUNE NOUĂ - Meniu rapoarte avansate */
+        .advanced-menu {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .advanced-menu h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .menu-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .menu-icon {
+            font-size: 2.5em;
+        }
+
+        .menu-text h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .menu-text p {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .export-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .export-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .export-excel {
+            background: #28a745;
+            color: white;
+        }
+
+        .export-excel:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .export-pdf {
+            background: #dc3545;
+            color: white;
+        }
+
+        .export-pdf:hover {
+            background: #c82333;
+            transform: translateY(-2px);
         }
 
         .section {
@@ -249,6 +340,63 @@ $statistici = [
             </div>
         </div>
 
+        <!-- MENIU RAPOARTE AVANSATE -->
+        <div class="advanced-menu">
+            <h2>📈 Rapoarte Avansate & Analiză</h2>
+            <div class="menu-grid">
+                <a href="dashboard.php" class="menu-card">
+                    <div class="menu-icon">📊</div>
+                    <div class="menu-text">
+                        <h3>Dashboard Interactiv</h3>
+                        <p>Statistici vizuale & grafice</p>
+                    </div>
+                </a>
+
+                <a href="raport_top_carti.php" class="menu-card">
+                    <div class="menu-icon">🏆</div>
+                    <div class="menu-text">
+                        <h3>Top Cărți</h3>
+                        <p>Cele mai împrumutate cărți</p>
+                    </div>
+                </a>
+
+                <a href="raport_intarzieri.php" class="menu-card">
+                    <div class="menu-icon">⏰</div>
+                    <div class="menu-text">
+                        <h3>Întârzieri</h3>
+                        <p>Cititori cu cărți nereturnate</p>
+                    </div>
+                </a>
+
+                <a href="sistem_notificari.php" class="menu-card">
+                    <div class="menu-icon">📧</div>
+                    <div class="menu-text">
+                        <h3>Notificări</h3>
+                        <p>Email & SMS automate</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- EXPORT DATE -->
+        <div class="export-section">
+            <h2>📥 Export Date</h2>
+            <div class="export-buttons">
+                <a href="export_excel.php?tip=active" class="export-btn export-excel">
+                    📗 Export Excel - Împrumuturi Active
+                </a>
+                <a href="export_excel.php?tip=istoric" class="export-btn export-excel">
+                    📗 Export Excel - Istoric Complet
+                </a>
+                <a href="export_pdf.php?tip=active" class="export-btn export-pdf">
+                    📕 Export PDF - Împrumuturi Active
+                </a>
+                <a href="export_pdf.php?tip=statistica" class="export-btn export-pdf">
+                    📕 Export PDF - Raport Statistic
+                </a>
+            </div>
+        </div>
+
         <!-- Statistici generale -->
         <div class="section">
             <h2>📈 Statistici Generale</h2>
@@ -315,7 +463,7 @@ $statistici = [
                     </tbody>
                 </table>
             <?php else: ?>
-                <div class="no-data">📭 Nu există împrumuturi active</div>
+                <div class="no-data">🔭 Nu există împrumuturi active</div>
             <?php endif; ?>
         </div>
 
@@ -350,7 +498,7 @@ $statistici = [
                     </tbody>
                 </table>
             <?php else: ?>
-                <div class="no-data">📭 Nu există istoric de returnări</div>
+                <div class="no-data">🔭 Nu există istoric de returnări</div>
             <?php endif; ?>
         </div>
     </div>

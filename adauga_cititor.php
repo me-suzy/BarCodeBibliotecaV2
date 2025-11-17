@@ -2,22 +2,63 @@
 // adauga_cititor.php - Adaugă cititori noi în sistem
 require_once 'config.php';
 
+// Pre-completare cod dacă vine din scanare
+$cod_prestabilit = isset($_GET['cod']) ? strtoupper(trim($_GET['cod'])) : '';
+
+// Variabile pentru păstrarea datelor la eroare
+$form_data = [
+    'cod_bare' => $cod_prestabilit,
+    'nume' => '',
+    'prenume' => '',
+    'telefon' => '',
+    'email' => ''
+];
+
+$mesaj = '';
+$tip_mesaj = '';
+$cod_duplicat = false;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $cod_bare = trim($_POST['cod_bare']);
-    $nume = trim($_POST['nume']);
-    $prenume = trim($_POST['prenume']);
-    $telefon = trim($_POST['telefon']);
-    $email = trim($_POST['email']);
+    // Salvează toate datele
+    $form_data = [
+        'cod_bare' => strtoupper(trim($_POST['cod_bare'])),
+        'nume' => trim($_POST['nume']),
+        'prenume' => trim($_POST['prenume']),
+        'telefon' => trim($_POST['telefon']),
+        'email' => trim($_POST['email'])
+    ];
 
     try {
         $stmt = $pdo->prepare("INSERT INTO cititori (cod_bare, nume, prenume, telefon, email) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$cod_bare, $nume, $prenume, $telefon, $email]);
+        $stmt->execute([
+            $form_data['cod_bare'],
+            $form_data['nume'],
+            $form_data['prenume'],
+            $form_data['telefon'],
+            $form_data['email']
+        ]);
 
-        $mesaj = "✅ Cititorul a fost adăugat cu succes!";
+        $mesaj = "✅ Cititorul <strong>{$form_data['nume']} {$form_data['prenume']}</strong> a fost adăugat cu succes!";
         $tip_mesaj = "success";
+        
+        // Resetează DOAR la succes
+        $form_data = [
+            'cod_bare' => '',
+            'nume' => '',
+            'prenume' => '',
+            'telefon' => '',
+            'email' => ''
+        ];
+        
     } catch (PDOException $e) {
-        $mesaj = "❌ Eroare: " . $e->getMessage();
-        $tip_mesaj = "danger";
+        if ($e->getCode() == 23000 && strpos($e->getMessage(), 'Duplicate entry') !== false) {
+            $mesaj = "❌ Codul de bare <strong>{$form_data['cod_bare']}</strong> există deja în baza de date!";
+            $tip_mesaj = "danger";
+            $cod_duplicat = true;
+        } else {
+            $mesaj = "❌ Eroare la salvare: " . $e->getMessage();
+            $tip_mesaj = "danger";
+        }
     }
 }
 ?>
@@ -202,6 +243,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .card-value {
             color: #333;
         }
+
+        .error-field {
+            border-color: #dc3545 !important;
+            background: #f8d7da !important;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .success-indicator {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .check-link {
+            text-align: center;
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .check-link a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .check-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -221,32 +303,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="alert alert-<?php echo $tip_mesaj; ?>">
                 <?php echo $mesaj; ?>
             </div>
+            
+            <?php if ($cod_duplicat): ?>
+                <div class="check-link">
+                    <a href="cititori.php" target="_blank">🔍 Vezi lista completă de cititori pentru a verifica codurile existente</a>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
 
         <form method="POST" id="cititorForm">
             <div class="form-group">
                 <label>Cod de bare carnet <span class="required">*</span></label>
-                <input type="text" name="cod_bare" placeholder="USER003" required>
+                <input type="text" 
+                       name="cod_bare" 
+                       placeholder="USER003" 
+                       value="<?php echo htmlspecialchars($form_data['cod_bare']); ?>"
+                       required
+                       class="<?php echo $cod_duplicat ? 'error-field' : ''; ?>"
+                       <?php echo (!empty($cod_prestabilit) && !$cod_duplicat) ? 'readonly style="background:#e9ecef;"' : ''; ?>>
+                
+                <?php if (!empty($cod_prestabilit) && !$cod_duplicat): ?>
+                    <small class="success-indicator">
+                        ✅ Cod scanat: <?php echo htmlspecialchars($cod_prestabilit); ?>
+                    </small>
+                <?php endif; ?>
+                
+                <?php if ($cod_duplicat): ?>
+                    <small class="error-message">
+                        ⚠️ Acest cod există deja! Verifică lista de cititori sau folosește alt cod.
+                    </small>
+                <?php endif; ?>
             </div>
 
             <div class="form-group">
                 <label>Nume <span class="required">*</span></label>
-                <input type="text" name="nume" placeholder="Popescu" required>
+                <input type="text" 
+                       name="nume" 
+                       placeholder="Popescu" 
+                       value="<?php echo htmlspecialchars($form_data['nume']); ?>"
+                       required>
             </div>
 
             <div class="form-group">
                 <label>Prenume <span class="required">*</span></label>
-                <input type="text" name="prenume" placeholder="Maria" required>
+                <input type="text" 
+                       name="prenume" 
+                       placeholder="Maria" 
+                       value="<?php echo htmlspecialchars($form_data['prenume']); ?>"
+                       required>
             </div>
 
             <div class="form-group">
                 <label>Telefon</label>
-                <input type="tel" name="telefon" placeholder="0721123456">
+                <input type="tel" 
+                       name="telefon" 
+                       placeholder="0721123456"
+                       value="<?php echo htmlspecialchars($form_data['telefon']); ?>">
             </div>
 
             <div class="form-group">
                 <label>Email</label>
-                <input type="email" name="email" placeholder="maria@email.ro">
+                <input type="email" 
+                       name="email" 
+                       placeholder="maria@email.ro"
+                       value="<?php echo htmlspecialchars($form_data['email']); ?>">
             </div>
 
             <button type="submit">Adaugă cititor</button>
@@ -316,13 +436,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
 
-        // Resetare formular după succes
-        <?php if (isset($mesaj) && $tip_mesaj === 'success'): ?>
-            setTimeout(() => {
-                document.getElementById('cititorForm').reset();
-                document.getElementById('previewCard').style.display = 'none';
-            }, 2000);
-        <?php endif; ?>
+        // Actualizează previzualizarea la încărcare dacă sunt date
+        window.addEventListener('load', updatePreview);
     </script>
 </body>
 </html>
